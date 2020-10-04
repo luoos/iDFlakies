@@ -26,7 +26,7 @@ import edu.illinois.cs.testrunner.configuration.Configuration;
 public class GetMavenTestOrder extends StandardMain {
 
     private boolean mvnTestMustPass = Boolean.parseBoolean(Configuration.config().getProperty("dt.mvn_test.must_pass","true"));
-    
+
     @Override
     protected void run() throws Exception {
         final List<String> classOrder = getClassOrder(mvnTestLog.toFile());

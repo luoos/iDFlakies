@@ -8,6 +8,7 @@ import edu.illinois.cs.dt.tools.detection.filters.UniqueFilter;
 import edu.illinois.cs.dt.tools.runner.InstrumentingSmartRunner;
 import edu.illinois.cs.testrunner.data.results.TestRunResult;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public class SmartShuffleDetector extends ExecutingDetector {
@@ -18,12 +19,14 @@ public class SmartShuffleDetector extends ExecutingDetector {
 
     public SmartShuffleDetector(final InstrumentingSmartRunner runner,
                                 final int rounds, final List<String> tests,
-                                final String type) {
+                                final String type,
+                                final Path originalOrderPath) {
         super(runner, rounds, type);
 
         this.originalOrder = tests;
         this.shuffler = new SmartShuffler(tests);
-        this.originalResults = DetectorUtil.originalResults(originalOrder, runner);
+        this.originalResults = DetectorUtil.originalResults(
+                originalOrder, runner, originalOrderPath);
 
         addFilter(new ConfirmationFilter(type, tests, runner));
         addFilter(new UniqueFilter());

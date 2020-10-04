@@ -6,6 +6,7 @@ import edu.illinois.cs.dt.tools.detection.filters.UniqueFilter;
 import edu.illinois.cs.testrunner.data.results.TestRunResult;
 import edu.illinois.cs.testrunner.runner.Runner;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public class OriginalDetector extends ExecutingDetector {
@@ -21,11 +22,14 @@ public class OriginalDetector extends ExecutingDetector {
         addFilter(new UniqueFilter());
     }
 
-    public OriginalDetector(final Runner runner, final int rounds, final List<String> tests) {
+    public OriginalDetector(final Runner runner,
+                            final int rounds,
+                            final List<String> tests,
+                            final Path originalOrderPath) {
         super(runner, rounds, "original");
 
         this.tests = tests;
-        this.origResult = DetectorUtil.originalResults(tests, runner);
+        this.origResult = DetectorUtil.originalResults(tests, runner, originalOrderPath);
 
         addFilter(new UniqueFilter());
     }

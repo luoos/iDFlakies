@@ -14,17 +14,22 @@ public class DetectorFactory {
         return makeDetector(runner, tests, Configuration.config().getProperty("dt.randomize.rounds", 20));
     }
 
-    public static Detector makeDetector(final InstrumentingSmartRunner runner, final List<String> tests, final int rounds) {
+    public static Detector makeDetector(final InstrumentingSmartRunner runner,
+            final List<String> tests,
+            final int rounds) {
         if (detectorType().startsWith("random")) {
-            return new RandomDetector(detectorType(), runner, rounds, tests);
+            return new RandomDetector(detectorType(), runner, rounds, tests,
+                    runner.originalOrderPath());
         } else if (detectorType().startsWith("reverse")) {
-            return new ReverseDetector(runner, rounds, detectorType(), tests);
+            return new ReverseDetector(runner, rounds, detectorType(), tests,
+                    runner.originalOrderPath());
         } else if (detectorType().equals("original")) {
-            return new OriginalDetector(runner, rounds, tests);
+            return new OriginalDetector(runner, rounds, tests, runner.originalOrderPath());
         } else if (detectorType().equals("smart-shuffle")) {
-            return new SmartShuffleDetector(runner, rounds, tests, detectorType());
+            return new SmartShuffleDetector(runner, rounds, tests, detectorType(),
+                    runner.originalOrderPath());
         }
 
-        return new RandomDetector("random", runner, rounds, tests);
+        return new RandomDetector("random", runner, rounds, tests, runner.originalOrderPath());
     }
 }

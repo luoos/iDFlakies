@@ -1,5 +1,6 @@
 package edu.illinois.cs.dt.tools.runner;
 
+import edu.illinois.cs.dt.tools.detection.DetectorPathManager;
 import edu.illinois.cs.testrunner.data.framework.TestFramework;
 import edu.illinois.cs.testrunner.data.results.TestRunResult;
 import edu.illinois.cs.testrunner.runner.Runner;
@@ -13,6 +14,7 @@ import scala.util.Failure;
 import scala.util.Try;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 public class InstrumentingSmartRunner extends SmartRunner {
@@ -70,5 +72,18 @@ public class InstrumentingSmartRunner extends SmartRunner {
 
     private void writeTo(final Path outputPath) {
         this.outputPath = outputPath;
+    }
+
+    public Path originalOrderPath() {
+        return addSuffixToPath(
+                DetectorPathManager.originalOrderPath(), framework().toString());
+    }
+
+    public Path outputPath(Path baseOutputPath) {
+        return addSuffixToPath(baseOutputPath, framework().toString());
+    }
+
+    private Path addSuffixToPath(Path path, String suffix) {
+        return Paths.get(path.toString() + "-" + suffix);
     }
 }

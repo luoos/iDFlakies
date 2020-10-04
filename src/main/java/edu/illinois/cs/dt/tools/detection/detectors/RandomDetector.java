@@ -9,6 +9,7 @@ import edu.illinois.cs.dt.tools.runner.InstrumentingSmartRunner;
 import edu.illinois.cs.testrunner.data.results.TestRunResult;
 import edu.illinois.cs.testrunner.runner.Runner;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public class RandomDetector extends ExecutingDetector {
@@ -17,13 +18,14 @@ public class RandomDetector extends ExecutingDetector {
 
     private final TestShuffler testShuffler;
 
-    public RandomDetector(final String type, final Runner runner, final int rounds, final List<String> tests) {
+    public RandomDetector(final String type, final Runner runner,
+            final int rounds, final List<String> tests, final Path originalOrderPath) {
         super(runner, rounds, type);
 
         this.tests = tests;
 
         this.testShuffler = new TestShuffler(type, rounds, tests);
-        this.origResult = DetectorUtil.originalResults(tests, runner);
+        this.origResult = DetectorUtil.originalResults(tests, runner, originalOrderPath);
 
         // Filters to be applied in order
         if (runner instanceof InstrumentingSmartRunner) {

@@ -8,6 +8,7 @@ import edu.illinois.cs.dt.tools.detection.filters.VerifyFilter;
 import edu.illinois.cs.testrunner.data.results.TestRunResult;
 import edu.illinois.cs.testrunner.runner.Runner;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public class ReverseDetector extends ExecutingDetector {
@@ -15,11 +16,12 @@ public class ReverseDetector extends ExecutingDetector {
     private TestRunResult origResult;
     private final TestShuffler testShuffler;
 
-    public ReverseDetector(final Runner runner, final int rounds, final String name, final List<String> tests) {
+    public ReverseDetector(final Runner runner, final int rounds, final String name,
+            final List<String> tests, final Path originalOrderPath) {
         // Always 1 round, because there's only one way to reverse the tests
         super(runner, 1, name);
         this.tests = tests;
-        this.origResult = DetectorUtil.originalResults(tests, runner);
+        this.origResult = DetectorUtil.originalResults(tests, runner, originalOrderPath);
 
         testShuffler = new TestShuffler(name, rounds, tests);
 

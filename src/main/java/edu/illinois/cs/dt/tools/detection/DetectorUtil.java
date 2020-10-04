@@ -11,6 +11,7 @@ import edu.illinois.cs.testrunner.runner.Runner;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 public class DetectorUtil {
-    public static TestRunResult originalResults(final List<String> originalOrder, final Runner runner) {
+    public static TestRunResult originalResults(final List<String> originalOrder,
+            final Runner runner, final Path originalOrderPath) {
         final int originalOrderTries = Configuration.config().getProperty("dt.detector.original_order.retry_count", 3);
         final boolean allMustPass = Configuration.config().getProperty("dt.detector.original_order.all_must_pass", true);
 
@@ -33,7 +35,7 @@ public class DetectorUtil {
 
             try {
                 Files.write(DetectorPathManager.originalResultsLog(), (origResult.id() + "\n").getBytes(),
-                        Files.exists(DetectorPathManager.originalOrderPath()) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
+                        Files.exists(originalOrderPath) ? StandardOpenOption.APPEND : StandardOpenOption.CREATE);
             } catch (IOException ignored) {}
 
             if (allPass(origResult)) {
