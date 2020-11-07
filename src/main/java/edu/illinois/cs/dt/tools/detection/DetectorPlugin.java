@@ -10,6 +10,8 @@ import edu.illinois.cs.dt.tools.utility.ErrorLogger;
 import edu.illinois.cs.dt.tools.utility.GetMavenTestOrder;
 import edu.illinois.cs.dt.tools.utility.TestClassData;
 import edu.illinois.cs.testrunner.configuration.Configuration;
+import edu.illinois.cs.testrunner.data.framework.TestFramework;
+import edu.illinois.cs.testrunner.data.framework.JUnit5;
 import edu.illinois.cs.testrunner.mavenplugin.TestPlugin;
 import edu.illinois.cs.testrunner.mavenplugin.TestPluginPlugin;
 import edu.illinois.cs.testrunner.runner.Runner;
@@ -206,34 +208,40 @@ public class DetectorPlugin extends TestPlugin {
         Files.createDirectories(DetectorPathManager.cachePath());
         Files.createDirectories(DetectorPathManager.detectionResults());
 
-        final Option<Runner> runnerOption = RunnerFactory.from(mavenProject);
+        // Currently there could two runners, one for JUnit 4 and one for JUnit 5
+        // If the maven project has both JUnit 4 and JUnit 5 tests, two runners will
+        // be returned
+        final List<Runner> runners = RunnerFactory.allFrom(mavenProject);
 
-        // We need to do two checks to make sure that we can run this project
-        // Firstly, we must be able to run it's tests (if we get a runner from the RunnerFactory, we're good)
-        // Secondly, there must be some tests (see below)
-        if (runnerOption.isDefined()) {
-            if (this.runner == null) {
-                this.runner = InstrumentingSmartRunner.fromRunner(runnerOption.get());
-            }
-
-            final List<String> tests = getOriginalOrder(mavenProject);
-
-            // If there are no tests, we can't run a flaky test detector
-            if (!tests.isEmpty()) {
-                Files.createDirectories(outputPath);
-                Files.write(DetectorPathManager.originalOrderPath(), String.join(System.lineSeparator(), tests).getBytes());
-
-                final Detector detector = DetectorFactory.makeDetector(runner, tests, rounds);
-                TestPluginPlugin.info("Created dependent test detector (" + detector.getClass() + ").");
-
-                detector.writeTo(outputPath);
+        if (runners.size() != 1) {
+            String errorMsg;
+            if (runners.size() == 0) {
+                errorMsg =
+                    "Module is not using a supported test framework (probably not JUnit).";
             } else {
-                final String errorMsg = "Module has no tests, not running detector.";
-                TestPluginPlugin.info(errorMsg);
-                logger.writeError(errorMsg);
+                // more than one runner, currently is not supported.
+                errorMsg =
+                    "This project contains both JUnit 4 and JUnit 5 tests, which currently"
+                    + " is not supported by iDFlakies";
             }
+            TestPluginPlugin.info(errorMsg);
+            logger.writeError(errorMsg);
+            return null;
+        }
+
+        if (this.runner == null) {
+            this.runner = InstrumentingSmartRunner.fromRunner(runners.get(0));
+        }
+        final List<String> tests = getOriginalOrder(mavenProject, this.runner.framework());
+
+        if (!tests.isEmpty()) {
+            Files.createDirectories(outputPath);
+            Files.write(DetectorPathManager.originalOrderPath(), String.join(System.lineSeparator(), tests).getBytes());
+            final Detector detector = DetectorFactory.makeDetector(this.runner, tests, rounds);
+            TestPluginPlugin.info("Created dependent test detector (" + detector.getClass() + ").");
+            detector.writeTo(outputPath);
         } else {
-            final String errorMsg = "Module is not using a supported test framework (probably not JUnit).";
+            String errorMsg = "Module has no tests, not running detector.";
             TestPluginPlugin.info(errorMsg);
             logger.writeError(errorMsg);
         }
@@ -241,11 +249,16 @@ public class DetectorPlugin extends TestPlugin {
         return null;
     }
 
-    public static List<String> getOriginalOrder(final MavenProject mavenProject) throws IOException {
-        return getOriginalOrder(mavenProject, false);
+    public static List<String> getOriginalOrder(
+            final MavenProject mavenProject,
+            TestFramework testFramework) throws IOException {
+        return getOriginalOrder(mavenProject, testFramework, false);
     }
 
-    public static List<String> getOriginalOrder(final MavenProject mavenProject, boolean ignoreExisting) throws IOException {
+    public static List<String> getOriginalOrder(
+            final MavenProject mavenProject,
+            TestFramework testFramework,
+            boolean ignoreExisting) throws IOException {
         if (!Files.exists(DetectorPathManager.originalOrderPath()) || ignoreExisting) {
             TestPluginPlugin.mojo().getLog().info("Getting original order by parsing logs. ignoreExisting set to: " + ignoreExisting);
 
@@ -258,19 +271,23 @@ public class DetectorPlugin extends TestPlugin {
 
                     final List<String> tests = new ArrayList<>();
 
+                    String splitor = testFramework.getSplitor();
+
                     for (final TestClassData classData : testClassData) {
                         for (final String testName : classData.testNames) {
-                            tests.add(classData.className + "." + testName);
+                            tests.add(classData.className + splitor + testName);
                         }
                     }
 
                     return tests;
                 } else {
-                    return JavaConverters.bufferAsJavaList(TestLocator.tests(mavenProject).toBuffer());
+                    return JavaConverters.bufferAsJavaList(
+                            TestLocator.tests(mavenProject, testFramework).toBuffer());
                 }
             } catch (Exception ignored) {}
 
-            return JavaConverters.bufferAsJavaList(TestLocator.tests(mavenProject).toBuffer());
+            return JavaConverters.bufferAsJavaList(TestLocator.tests(mavenProject, testFramework)
+                    .toBuffer());
         } else {
             return Files.readAllLines(DetectorPathManager.originalOrderPath());
         }
